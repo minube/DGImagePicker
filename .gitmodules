@@ -1,0 +1,3 @@
+[submodule "AGImagePickerController"]
+	path = AGImagePickerController
+	url = https://fillito@github.com/fillito/AGImagePickerController.git
