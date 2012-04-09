@@ -110,8 +110,12 @@
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
     NSArray *infoArray=nil;
-    if(info){
-        infoArray=[NSArray arrayWithObject:[info objectForKey:@"UIImagePickerControllerOriginalImage"]];
+    if(info){        
+        if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.image"]){
+            infoArray=[NSArray arrayWithObject:[info objectForKey:@"UIImagePickerControllerOriginalImage"]];
+        }else if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.movie"]){
+            
+        }
     }
     if(self.successBlock){
         self.successBlock(infoArray);

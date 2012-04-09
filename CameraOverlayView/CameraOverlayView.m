@@ -40,13 +40,13 @@
 
 #define kVideoCounterWidth 92
 #define kVideoCounterHeight 29
-#define kVideoCounterMarginX 11
-#define kVideoCounterMarginY 11
+#define kVideoCounterMarginX 8
+#define kVideoCounterMarginY 27
 #define kVideoCounterPositionX0 11
 #define kVideoCounterPositionY0 25
-#define kVideoCounterPositionX90 45
+#define kVideoCounterPositionX90 60
 #define kVideoCounterPositionY90 -35
-#define kVideoCounterPositionX180 21
+#define kVideoCounterPositionX180 0
 #define kVideoCounterPositionX270 -35
 #define kVideoCounterPositionY270 50
 
