@@ -148,12 +148,12 @@
         //- Shot Button
         
         // Shot Button Video
-            self.shotButtonVideo = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {
+            self.shotButtonVideo = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {                
                 if(self.recordingVideo){                    
                     [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOff.png"] forState:UIControlStateNormal];
                     self.videoCounterContainer.hidden=YES;
                     [cameraPicker stopVideoCapture];
-                    [self.videoRecordingTimer invalidate];
+                    [self.videoRecordingTimer invalidate];                    
                 }else{
                     [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOn.png"] forState:UIControlStateNormal];
                     self.videoCounterContainer.hidden=NO;
@@ -269,6 +269,17 @@
     }
     
     return self;
+}
+- (void)resetOriginalState{
+    UIView *bottomControlsView=[[UIView alloc]initWithFrame:CGRectMake(0, [[UIScreen mainScreen] bounds].size.height - kGalleryBottomControlsHeight, [[UIScreen mainScreen] bounds].size.width, kGalleryBottomControlsHeight)];
+    self.cameraPicker.cameraCaptureMode=UIImagePickerControllerCameraCaptureModePhoto;    
+    CGRect switchBtnFrame=CGRectMake(0, 0, 50, 50);
+    switchBtnFrame.origin.x=bottomControlsView.frame.size.width-kCameraPicSwitchPositionOffsetX;
+    switchBtnFrame.origin.y=bottomControlsView.frame.size.height-kCameraPicSwitchPositionOffsetY;
+    self.cameraSwitchButton.frame=switchBtnFrame;
+    self.picCameraMode=YES;
+    self.shotButton.hidden=!self.picCameraMode;
+    self.shotButtonVideo.hidden=self.picCameraMode;
 }
 - (void) updateVideoCounter:(NSTimer*)theTimer{
     NSUInteger elapsedTime = -[self.videoRecordingTimeStart timeIntervalSinceNow];

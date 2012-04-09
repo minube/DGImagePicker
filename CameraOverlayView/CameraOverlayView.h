@@ -23,6 +23,7 @@
 @property (nonatomic,assign) UIImagePickerController *cameraPicker;
 @property (nonatomic, assign) id<CameraOverlayViewDelegate> delegate;
 
--(void)updateLastPhotoTaken;
--(void)controlsHidden:(BOOL)hidden;
+- (void)updateLastPhotoTaken;
+- (void)controlsHidden:(BOOL)hidden;
+- (void)resetOriginalState;
 @end

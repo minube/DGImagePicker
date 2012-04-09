@@ -25,6 +25,7 @@
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView;
 - (void)cameraOverlayViewGalleryButtonPressed:(CameraOverlayView *)cameraOverlayView AnimationDuration:(CGFloat)duration;
 - (void)galleryCameraButtonPressedWithAnimationDuration:(CGFloat)duration;
+- (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo;
 @end
 @implementation DGImagePicker
 @synthesize successBlock,failureBlock;
@@ -114,12 +115,19 @@
         if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.image"]){
             infoArray=[NSArray arrayWithObject:[info objectForKey:@"UIImagePickerControllerOriginalImage"]];
         }else if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.movie"]){
-            
+            NSString *videoFilePath = [[info objectForKey:UIImagePickerControllerMediaURL] path];
+            if ( UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoFilePath))
+            {
+                UISaveVideoAtPathToSavedPhotosAlbum(videoFilePath, self, @selector(video:didFinishSavingWithError:contextInfo:), videoFilePath);
+            } 
         }
     }
     if(self.successBlock){
         self.successBlock(infoArray);
     }
+}
+- (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
+    NSLog(@"Finished saving video with error: %@", error);
 }
 - (void)agImagePickerController:(AGImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info{
     if(self.successBlock){
@@ -145,6 +153,10 @@
 -(void)viewWillDisappear:(BOOL)animated{
     [super viewWillDisappear:animated];    
     self.navigationController.navigationBarHidden=NO;
+}
+-(void)viewDidDisappear:(BOOL)animated{
+    [super viewDidDisappear:animated];
+    [self.cameraOverlay resetOriginalState];
 }
 -(void)dealloc{
     [cameraOverlay release];
