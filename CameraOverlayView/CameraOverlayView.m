@@ -8,6 +8,9 @@
 
 #warning TODO: ajustar los elementos del overlay
 
+#define createBlockSafeSelf() __block typeof(self) blockSafeSelf = self;
+
+#import <QuartzCore/QuartzCore.h>
 #import "CameraOverlayView.h"
 
 #import "JSBlocksButton.h"
