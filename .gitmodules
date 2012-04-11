@@ -1,3 +1,6 @@
 [submodule "AGImagePickerController"]
 	path = AGImagePickerController
 	url = https://fillito@github.com/fillito/AGImagePickerController.git
+[submodule "JSBlockBasedUIKit"]
+	path = JSBlockBasedUIKit
+	url = https://fillito@github.com/JaviSoto/Block-based-UIKit-classes.git
