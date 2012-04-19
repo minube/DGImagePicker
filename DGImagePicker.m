@@ -32,16 +32,31 @@
 @synthesize cameraPicker,cameraOverlay,galleryPicker;
 @synthesize frontView,backView;
 @synthesize presentedPicker;
-
 - (DGImagePicker *)initWithDelegate:(id)delegate successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {
+    return [self initWithDelegate:delegate assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+{    
     self=[super initWithNibName:nil bundle:nil];
     if(self){
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
         
         self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:0 shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
-    
+        switch (assetsType) {
+            case DGAssetsTypeOnlyPhotos:
+                self.galleryPicker.assetsFilter=[ALAssetsFilter allPhotos];
+                break;
+            case DGAssetsTypeOnlyVideos:
+                self.galleryPicker.assetsFilter=[ALAssetsFilter allVideos];
+                break;
+            case DGAssetsTypeAll:
+            default:
+                DebugLog(@"All Assets");
+                self.galleryPicker.assetsFilter=[ALAssetsFilter allAssets];
+                break;
+        }
         if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]){
             self.cameraOverlay=[[[CameraOverlayView alloc]initWithFrame:self.view.frame]autorelease]; 
             self.cameraOverlay.delegate=self;
