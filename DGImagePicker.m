@@ -42,18 +42,21 @@
     if(self){
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
+        BOOL photoAndVideoCamera=NO;
         
         self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:0 shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
         switch (assetsType) {
             case DGAssetsTypeOnlyPhotos:
+                photoAndVideoCamera=NO;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allPhotos];
                 break;
             case DGAssetsTypeOnlyVideos:
+                photoAndVideoCamera=NO;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allVideos];
                 break;
             case DGAssetsTypeAll:
             default:
-                DebugLog(@"All Assets");
+                photoAndVideoCamera=YES;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allAssets];
                 break;
         }
@@ -70,6 +73,7 @@
             self.cameraOverlay.cameraPicker=self.cameraPicker;
             // Gallery to Camera Switch
             self.galleryPicker.toolbarRightButton=[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCamera target:self action:@selector(galleryCameraButtonPressed)]autorelease];
+            self.cameraOverlay.photoAndVideo=photoAndVideoCamera;
         }                
         if(self.cameraPicker){
             self.presentedPicker=self.cameraPicker;
