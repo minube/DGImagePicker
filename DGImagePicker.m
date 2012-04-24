@@ -37,6 +37,14 @@
     return [self initWithDelegate:delegate assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
 }
 - (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+{
+    return [self initWithDelegate:delegate maxItems:nil assetsType:assetsType successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+{
+    return [self initWithDelegate:delegate maxItems:maxItems assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {    
     self=[super initWithNibName:nil bundle:nil];
     if(self){
@@ -60,6 +68,8 @@
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allAssets];
                 break;
         }
+        if(maxItems)
+            self.galleryPicker.maximumNumberOfPhotos=[maxItems intValue];
         if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]){
             self.cameraOverlay=[[[CameraOverlayView alloc]initWithFrame:self.view.frame]autorelease]; 
             self.cameraOverlay.delegate=self;
