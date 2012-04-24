@@ -29,7 +29,9 @@
 #define kCameraPicSwitchPositionOffsetY 41
 #define kCameraPicSwitchPositionOffsetX 82
 #define kCameraVidSwitchPositionOffsetY 41
-#define kCameraVidSwitchPositionOffsetX 42
+#define kCameraVidSwitchPositionOffsetX 43
+#define kCameraSwitchBGPositionOffsetY 25
+#define kCameraSwitchBGPositionOffsetX 70
 
 #define kCameraCancelButtonWidth 69 
 #define kCameraCancelButtonHeight 36
@@ -64,6 +66,7 @@
 @property (retain,nonatomic) UIView         *videoCounterContainer;
 @property (retain,nonatomic) UIImageView    *switchCameraPicIcon;
 @property (retain,nonatomic) UIImageView    *switchCameraVidIcon;
+@property (retain,nonatomic) UIImageView    *cameraSwitchBG;
 @property (retain,nonatomic) JSBlocksButton *shotButton;
 @property (retain,nonatomic) JSBlocksButton *shotButtonVideo;
 @property (retain,nonatomic) JSBlocksButton *cameraSwitchButton;
@@ -87,10 +90,11 @@
 @synthesize galleryLastPictureLoadingSpinner = _galleryLastPictureLoadingSpinner;
 @synthesize galleryButtonBox = _galleryButtonBox;
 @synthesize lastPictureImageView = _lastPictureImageView;
+@synthesize photoAndVideo;
 @synthesize shotButton,shotButtonVideo,cameraSwitchButton,cancelButton;
 @synthesize videoCounterContainer;
 @synthesize picCameraMode,recordingVideo,recordingButtonOn;
-@synthesize switchCameraPicIcon,switchCameraVidIcon;
+@synthesize switchCameraPicIcon,switchCameraVidIcon,cameraSwitchBG;
 @synthesize videoRecordingTimer,videoRecordingTimeStart;
 
 - (id)initWithFrame:(CGRect)frame
@@ -195,7 +199,7 @@
             self.videoCounterContainer.hidden=YES;
         //- Video Counter
                 
-        // Camera Switch Button
+        // Camera Switch Button            
             self.cameraSwitchButton = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {
                 if(self.picCameraMode){
                     cameraPicker.cameraCaptureMode=UIImagePickerControllerCameraCaptureModeVideo;
@@ -223,6 +227,8 @@
             [self.cameraSwitchButton setImage:[UIImage imageNamed:@"cameraSwitch.png"] forState:UIControlStateNormal];   
             self.cameraSwitchButton.imageView.contentMode=UIViewContentModeCenter;
         //self.cameraSwitchButton.backgroundColor=[UIColor redColor];
+            self.cameraSwitchBG = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"cameraBottomSwitcherBG.png"]];
+            self.cameraSwitchBG.frame = CGRectMake(bottomControlsView.frame.size.width-kCameraSwitchBGPositionOffsetX, bottomControlsView.frame.size.height-kCameraSwitchBGPositionOffsetY, self.cameraSwitchBG.image.size.width, self.cameraSwitchBG.image.size.height);
             CGRect switchBtnFrame=CGRectMake(0, 0, 50, 50);
             switchBtnFrame.origin.x=bottomControlsView.frame.size.width-kCameraPicSwitchPositionOffsetX;
             switchBtnFrame.origin.y=bottomControlsView.frame.size.height-kCameraPicSwitchPositionOffsetY;
@@ -246,7 +252,7 @@
                     [self.delegate cameraCancel];
                 }
             }];
-            [self.cancelButton setTitle:@"Salir" forState:UIControlStateNormal];
+            [self.cancelButton setTitle:NSLocalizedString(@"DGImagePickerCameraBackButtonLabel", nil) forState:UIControlStateNormal];
             [self.cancelButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
             self.cancelButton.titleLabel.font=[UIFont fontWithName:@"Helvetica" size:13];        
             [self.cancelButton setBackgroundImage:[UIImage imageNamed:@"cameraBackButton.png"] forState:UIControlStateNormal];
@@ -259,7 +265,8 @@
         [bottomControlsView addSubview:bottomBG];
         [bottomControlsView addSubview:self.shotButton];
         [bottomControlsView addSubview:self.shotButtonVideo];
-        [bottomControlsView addSubview:galleryImageButton];        
+        [bottomControlsView addSubview:galleryImageButton];  
+        [bottomControlsView addSubview:self.cameraSwitchBG];
         [bottomControlsView addSubview:self.cameraSwitchButton];
         [bottomControlsView addSubview:self.switchCameraPicIcon];
         [bottomControlsView addSubview:self.switchCameraVidIcon];
@@ -272,6 +279,13 @@
     }
     
     return self;
+}
+- (void)setPhotoAndVideo:(BOOL)_photoAndVideo{
+    photoAndVideo=_photoAndVideo;
+    self.cameraSwitchButton.hidden=!photoAndVideo;
+    self.switchCameraPicIcon.hidden=!photoAndVideo;
+    self.switchCameraVidIcon.hidden=!photoAndVideo;
+    self.cameraSwitchBG.hidden=!photoAndVideo;
 }
 - (void)resetOriginalState{
     UIView *bottomControlsView=[[UIView alloc]initWithFrame:CGRectMake(0, [[UIScreen mainScreen] bounds].size.height - kGalleryBottomControlsHeight, [[UIScreen mainScreen] bounds].size.width, kGalleryBottomControlsHeight)];
@@ -493,6 +507,7 @@
     [shotButtonVideo release];
     [switchCameraPicIcon release];
     [switchCameraVidIcon release];
+    [cameraSwitchBG release];
     [cameraSwitchButton release];
     [_galleryLastPictureLoadingSpinner release];
     [_galleryButtonBox release];

@@ -37,26 +37,39 @@
     return [self initWithDelegate:delegate assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
 }
 - (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+{
+    return [self initWithDelegate:delegate maxItems:nil assetsType:assetsType successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+{
+    return [self initWithDelegate:delegate maxItems:maxItems assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {    
     self=[super initWithNibName:nil bundle:nil];
     if(self){
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
+        BOOL photoAndVideoCamera=NO;
         
         self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:0 shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
         switch (assetsType) {
             case DGAssetsTypeOnlyPhotos:
+                photoAndVideoCamera=NO;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allPhotos];
                 break;
             case DGAssetsTypeOnlyVideos:
+                photoAndVideoCamera=NO;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allVideos];
                 break;
             case DGAssetsTypeAll:
             default:
-                DebugLog(@"All Assets");
+                photoAndVideoCamera=YES;
                 self.galleryPicker.assetsFilter=[ALAssetsFilter allAssets];
                 break;
         }
+        if(maxItems)
+            self.galleryPicker.maximumNumberOfPhotos=[maxItems intValue];
         if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]){
             self.cameraOverlay=[[[CameraOverlayView alloc]initWithFrame:self.view.frame]autorelease]; 
             self.cameraOverlay.delegate=self;
@@ -70,6 +83,7 @@
             self.cameraOverlay.cameraPicker=self.cameraPicker;
             // Gallery to Camera Switch
             self.galleryPicker.toolbarRightButton=[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCamera target:self action:@selector(galleryCameraButtonPressed)]autorelease];
+            self.cameraOverlay.photoAndVideo=photoAndVideoCamera;
         }                
         if(self.cameraPicker){
             self.presentedPicker=self.cameraPicker;

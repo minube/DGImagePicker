@@ -19,7 +19,7 @@
 @end
 
 @interface CameraOverlayView : UIView
-
+@property (nonatomic) BOOL photoAndVideo;
 @property (nonatomic,assign) UIImagePickerController *cameraPicker;
 @property (nonatomic, assign) id<CameraOverlayViewDelegate> delegate;
 
