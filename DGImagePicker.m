@@ -8,11 +8,14 @@
 
 #import "DGImagePicker.h"
 #import "CustomImagePickerController.h"
+#import "ImageCropViewController.h"
 #import <MobileCoreServices/UTCoreTypes.h>
 
 @interface DGImagePicker(){
 }
 @property (assign,nonatomic) id presentedPicker;
+@property (nonatomic)        NSInteger maxSelectableItems;
+@property (retain,nonatomic) UIViewController *imagePickerVC;
 @property (assign,nonatomic) UIView* frontView;
 @property (assign,nonatomic) UIView* backView;
 @property (retain,nonatomic) CameraOverlayView *cameraOverlay;
@@ -28,6 +31,8 @@
 - (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo;
 @end
 @implementation DGImagePicker
+@synthesize maxSelectableItems;
+@synthesize imagePickerVC;
 @synthesize successBlock,failureBlock;
 @synthesize cameraPicker,cameraOverlay,galleryPicker;
 @synthesize frontView,backView;
@@ -38,7 +43,7 @@
 }
 - (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {
-    return [self initWithDelegate:delegate maxItems:nil assetsType:assetsType successBlock:_successBlock failureBlock:_failureBlock];
+    return [self initWithDelegate:delegate maxItems:[NSNumber numberWithInt:0] assetsType:assetsType successBlock:_successBlock failureBlock:_failureBlock];
 }
 - (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {
@@ -47,12 +52,14 @@
 - (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {    
     self=[super initWithNibName:nil bundle:nil];
+    self.imagePickerVC=[[UIViewController alloc]init];
     if(self){
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
+        self.maxSelectableItems=[maxItems intValue];
         BOOL photoAndVideoCamera=NO;
         
-        self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:0 shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
+        self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:[maxItems intValue] shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
         switch (assetsType) {
             case DGAssetsTypeOnlyPhotos:
                 photoAndVideoCamera=NO;
@@ -140,9 +147,11 @@
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
     NSArray *infoArray=nil;
+    UIImage *image;
     if(info){        
         if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.image"]){
-            infoArray=[NSArray arrayWithObject:[info objectForKey:@"UIImagePickerControllerOriginalImage"]];
+            image=[info objectForKey:@"UIImagePickerControllerOriginalImage"];
+            infoArray=[NSArray arrayWithObject:image];
         }else if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.movie"]){
             NSString *videoFilePath = [[info objectForKey:UIImagePickerControllerMediaURL] path];
             if ( UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoFilePath))
@@ -151,17 +160,27 @@
             } 
         }
     }
+    [self.navigationController pushViewController:[[[ImageCropViewController alloc]initWithImage:image]autorelease] animated:YES];
+    
+    /*
     if(self.successBlock){
         self.successBlock(infoArray);
     }
+     */
 }
 - (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
     NSLog(@"Finished saving video with error: %@", error);
 }
 - (void)agImagePickerController:(AGImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info{
-    if(self.successBlock){
-        self.successBlock(info);
-    }
+    if(self.maxSelectableItems==1 && [info count]==1){
+        ALAsset *imageAsset=[info lastObject];
+        UIImage *image=[UIImage imageWithCGImage:[[imageAsset defaultRepresentation] fullScreenImage]];
+        [self.navigationController pushViewController:[[[ImageCropViewController alloc]initWithImage:image]autorelease] animated:YES];
+    }else {
+        if(self.successBlock){
+            self.successBlock(info);
+        }
+    }    
 }
 - (void)agImagePickerController:(AGImagePickerController *)picker didFail:(NSError *)error{
     if(self.failureBlock){
@@ -188,6 +207,7 @@
     [self.cameraOverlay resetOriginalState];
 }
 -(void)dealloc{
+    [imagePickerVC release];
     [cameraOverlay release];
     [cameraPicker release];
     [galleryPicker release];
