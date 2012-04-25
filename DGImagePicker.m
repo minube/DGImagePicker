@@ -82,6 +82,7 @@
             self.cameraOverlay.delegate=self;
             [self.cameraOverlay updateLastPhotoTaken];
             self.cameraPicker= [[[CustomImagePickerController alloc] init]autorelease];
+            self.cameraPicker.allowsEditing=YES;
             self.cameraPicker.delegate = self;
             self.cameraPicker.sourceType = UIImagePickerControllerSourceTypeCamera;
             self.cameraPicker.cameraOverlayView = self.cameraOverlay;        
@@ -160,13 +161,19 @@
             } 
         }
     }
-    [self.navigationController pushViewController:[[[ImageCropViewController alloc]initWithImage:image]autorelease] animated:YES];
-    
     /*
+    SSPhotoCropperViewController *photoCropper =
+    [[SSPhotoCropperViewController alloc] initWithPhoto:image
+                                               delegate:self
+                                                 uiMode:SSPCUIModePushedOnToANavigationController
+                                        showsInfoButton:NO];
+    [photoCropper setMinZoomScale:0.75f];
+    [photoCropper setMaxZoomScale:3.0f];
+    [self.navigationController pushViewController:[photoCropper autorelease] animated:YES];
+    */
     if(self.successBlock){
         self.successBlock(infoArray);
     }
-     */
 }
 - (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
     NSLog(@"Finished saving video with error: %@", error);
@@ -175,7 +182,14 @@
     if(self.maxSelectableItems==1 && [info count]==1){
         ALAsset *imageAsset=[info lastObject];
         UIImage *image=[UIImage imageWithCGImage:[[imageAsset defaultRepresentation] fullScreenImage]];
-        [self.navigationController pushViewController:[[[ImageCropViewController alloc]initWithImage:image]autorelease] animated:YES];
+        SSPhotoCropperViewController *photoCropper =
+        [[SSPhotoCropperViewController alloc] initWithPhoto:image
+                                                   delegate:self
+                                                     uiMode:SSPCUIModePushedOnToANavigationController
+                                            showsInfoButton:NO];
+        [photoCropper setMinZoomScale:0.75f];
+        [photoCropper setMaxZoomScale:3.0f];
+        [self.navigationController pushViewController:[photoCropper autorelease] animated:YES];
     }else {
         if(self.successBlock){
             self.successBlock(info);
@@ -205,6 +219,18 @@
 -(void)viewDidDisappear:(BOOL)animated{
     [super viewDidDisappear:animated];
     [self.cameraOverlay resetOriginalState];
+}
+#pragma mark - SSPhotoCropperDelegate 
+
+- (void) photoCropper:(SSPhotoCropperViewController *)photoCropper
+         didCropPhoto:(UIImage *)photo
+{
+    LogMethod();
+}
+
+- (void) photoCropperDidCancel:(SSPhotoCropperViewController *)photoCropper
+{
+    LogMethod();
 }
 -(void)dealloc{
     [imagePickerVC release];
