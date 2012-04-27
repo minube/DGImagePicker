@@ -52,7 +52,7 @@
 - (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {    
     self=[super initWithNibName:nil bundle:nil];
-    self.imagePickerVC=[[UIViewController alloc]init];
+    self.imagePickerVC=[[[UIViewController alloc]init]autorelease];
     if(self){
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
@@ -179,7 +179,7 @@
     NSLog(@"Finished saving video with error: %@", error);
 }
 - (void)agImagePickerController:(AGImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info{
-    if(self.maxSelectableItems==1 && [info count]==1){
+    if(self.maxSelectableItems==1 && [info count]==1 && false){
         ALAsset *imageAsset=[info lastObject];
         UIImage *image=[UIImage imageWithCGImage:[[imageAsset defaultRepresentation] fullScreenImage]];
         SSPhotoCropperViewController *photoCropper =
