@@ -6,7 +6,7 @@
 //  Copyright (c) 2012 JSoto, Inc. All rights reserved.
 //
 
-#warning TODO: ajustar los elementos del overlay
+#warning TO-DO: ajustar los elementos del overlay
 
 #define createBlockSafeSelf() __block typeof(self) blockSafeSelf = self;
 
