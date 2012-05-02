@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "CameraOverlayView.h"
 #import "AGImagePickerController.h"
+#import "SSPhotoCropperViewController.h"
 typedef enum{
     DGAssetsTypeAll = 0,
     DGAssetsTypeOnlyPhotos,
@@ -16,7 +17,7 @@ typedef enum{
 }DGAssetsType;
 typedef void (^DGIPDidSuccess)(NSArray *info);
 typedef void (^DGIPDidFail)(NSError *error);
-@interface DGImagePicker : UIViewController<UINavigationControllerDelegate,UIImagePickerControllerDelegate,AGImagePickerControllerDelegate,CameraOverlayViewDelegate>{
+@interface DGImagePicker : UIViewController <UINavigationControllerDelegate,UIImagePickerControllerDelegate,AGImagePickerControllerDelegate,CameraOverlayViewDelegate,SSPhotoCropperDelegate>{
     
 }
 - (DGImagePicker *)initWithDelegate:(id)delegate successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
