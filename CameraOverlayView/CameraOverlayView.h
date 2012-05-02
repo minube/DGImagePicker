@@ -18,7 +18,7 @@
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView;
 @end
 
-@interface CameraOverlayView : UIView
+@interface CameraOverlayView : UIView<UIGestureRecognizerDelegate>
 @property (nonatomic) BOOL photoAndVideo;
 @property (nonatomic,assign) UIImagePickerController *cameraPicker;
 @property (nonatomic, assign) id<CameraOverlayViewDelegate> delegate;
