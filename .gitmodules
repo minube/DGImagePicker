@@ -4,6 +4,3 @@
 [submodule "JSBlockBasedUIKit"]
 	path = JSBlockBasedUIKit
 	url = https://fillito@github.com/JaviSoto/Block-based-UIKit-classes.git
-[submodule "SSPhotoCropperViewController"]
-	path = SSPhotoCropperViewController
-	url = https://fillito@github.com/fillito/SSPhotoCropperViewController.git
