@@ -31,6 +31,7 @@
 - (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo;
 @end
 @implementation DGImagePicker
+@synthesize selectedAssetsURLS=_selectedAssetsURLS;
 @synthesize maxSelectableItems;
 @synthesize imagePickerVC;
 @synthesize successBlock,failureBlock;
@@ -146,14 +147,61 @@
         self.failureBlock(nil);
     }
 }
+/*
+
+if (userImage != nil) {
+    ALAssetsLibrary * library = [[ALAssetsLibrary alloc] init];
+    [library assetForURL:[NSURL fileURLWithPath:userImage] 
+             resultBlock:^(ALAsset * asset){
+                 [imageOfDevice setImage:[UIImage imageWithCGImage:[asset thumbnail]]];
+             }
+            failureBlock:^(NSError * error){
+                NSLog(@"cannot get image - %@", [error localizedDescription]);
+            }];
+}
+
+ALAssetsLibrary *library = [AssetLibraryUtil instance].library;
+if( [picker sourceType] == UIImagePickerControllerSourceTypeCamera )
+{
+    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+    [library writeImageToSavedPhotosAlbum:image.CGImage orientation:(ALAssetOrientation)image.imageOrientation completionBlock:^(NSURL *assetURL, NSError *error )
+     {
+         NSLog(@"IMAGE SAVED TO PHOTO ALBUM");
+         [library assetForURL:assetURL resultBlock:^(ALAsset *asset )
+          {
+              NSLog(@"we have our ALAsset!");
+          } 
+                 failureBlock:^(NSError *error )
+          {
+              NSLog(@"Error loading asset");
+          }];
+     }];
+}
+ */
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
-    NSArray *infoArray=nil;
-    UIImage *image;
+    DebugLog(@"picker 1");
+    ALAssetsLibrary * library = [[ALAssetsLibrary alloc] init];
+    UIImage * image;
+    // Request to save Image
+    __block NSArray *infoArray=nil;
     if(info){        
-        if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.image"]){
-            image=[info objectForKey:@"UIImagePickerControllerOriginalImage"];
-            infoArray=[NSArray arrayWithObject:image];
-        }else if([[info objectForKey:@"UIImagePickerControllerMediaType"]isEqualToString:@"public.movie"]){
+        if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){
+            DebugLog(@"picker 2");
+            image=[info objectForKey:UIImagePickerControllerOriginalImage];
+            DebugLog(@"picker 3");
+            [library writeImageToSavedPhotosAlbum:[image CGImage] orientation:(ALAssetOrientation)[image imageOrientation] completionBlock:^(NSURL * assetURL, NSError * error){
+                DebugLog(@"picker 4");
+                [library assetForURL:assetURL resultBlock:^(ALAsset * asset){
+                     infoArray=[NSArray arrayWithObject:asset];
+                     if(self.successBlock){
+                         self.successBlock(infoArray);
+                     }
+                 }
+                failureBlock:^(NSError * error){
+                    NSLog(@"cannot get image - %@", [error localizedDescription]);
+                }];
+            }];
+        }else if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.movie"]){
             NSString *videoFilePath = [[info objectForKey:UIImagePickerControllerMediaURL] path];
             if ( UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoFilePath))
             {
@@ -171,9 +219,7 @@
     [photoCropper setMaxZoomScale:3.0f];
     [self.navigationController pushViewController:[photoCropper autorelease] animated:YES];
     */
-    if(self.successBlock){
-        self.successBlock(infoArray);
-    }
+    
 }
 - (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
     NSLog(@"Finished saving video with error: %@", error);
@@ -207,6 +253,15 @@
 }
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView{
 }
+-(void)setSelectedAssetsURLS:(NSArray *)selectedAssetsURLS{
+    [selectedAssetsURLS retain];
+    if(_selectedAssetsURLS){
+        [_selectedAssetsURLS release];
+        _selectedAssetsURLS=nil;
+    }
+    _selectedAssetsURLS=selectedAssetsURLS;
+    self.galleryPicker.selectedAssetsURLS=selectedAssetsURLS;
+}
 -(void)viewWillAppear:(BOOL)animated{ 
     [super viewWillAppear:animated];    
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackTranslucent];
@@ -233,6 +288,7 @@
     LogMethod();
 }
 -(void)dealloc{
+    [_selectedAssetsURLS release];
     [imagePickerVC release];
     [cameraOverlay release];
     [cameraPicker release];
