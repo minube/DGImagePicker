@@ -7,14 +7,16 @@
 //
 
 #import "ImageLibraryAssetManager.h"
-
+#import "AGImagePickerController.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 
 @implementation ImageLibraryAssetManager
-
++ (ALAssetsLibrary *)defaultAssetsLibrary {
+    return [AGImagePickerController defaultAssetsLibrary];
+}
 + (void)loadLastPhotoTakenWithCallback:(ImageLibraryAssetPhotoRetrieveBlock)block
 {
-    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
+    ALAssetsLibrary *library = [ImageLibraryAssetManager defaultAssetsLibrary];
     
     __block BOOL imageFound = NO;
     
@@ -55,7 +57,6 @@
         NSLog(@"%s error getting last image: %@", (char *)_cmd, error);
         block(nil, nil);
     }];
-    [library release];
 }
 
 @end

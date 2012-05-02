@@ -32,6 +32,11 @@
 #define kCameraVidSwitchPositionOffsetX 43
 #define kCameraSwitchBGPositionOffsetY 25
 #define kCameraSwitchBGPositionOffsetX 70
+#define kCameraUpperControlsAreaHeight 70
+
+#define kCameraFocustIndicatorSize 73.0f
+#define kCameraFocustIndicatorFlickeringInterval 0.1f
+#define kCameraFocustIndicatorFlickeringTime 2.0f
 
 #define kCameraCancelButtonWidth 69 
 #define kCameraCancelButtonHeight 36
@@ -42,6 +47,16 @@
 #define kCameraCancelButtonPositionX180 15
 #define kCameraCancelButtonPositionX270 70
 #define kCameraCancelButtonPositionY270 -17
+
+#define kSwitchBackCameraButtonWidth 69 
+#define kSwitchBackCameraButtonHeight 36
+#define kSwitchBackCameraButtonPositionX0 246
+#define kSwitchBackCameraButtonPositionY0 26
+#define kSwitchBackCameraButtonPositionX90 335
+#define kSwitchBackCameraButtonPositionY90 237
+#define kSwitchBackCameraButtonPositionX180 489
+#define kSwitchBackCameraButtonPositionX270 388
+#define kSwitchBackCameraButtonPositionY270 -256
 
 #define kVideoCounterWidth 92
 #define kVideoCounterHeight 29
@@ -61,16 +76,22 @@
 @property (retain,nonatomic) NSDate *videoRecordingTimeStart;
 @property (retain,nonatomic) NSTimer *videoRecordingTimer;
 @property (nonatomic)        BOOL picCameraMode;
+@property (nonatomic)        BOOL picFrontCameraMode;
 @property (nonatomic)        BOOL recordingVideo;
 @property (nonatomic)        BOOL recordingButtonOn;
 @property (retain,nonatomic) UIView         *videoCounterContainer;
 @property (retain,nonatomic) UIImageView    *switchCameraPicIcon;
 @property (retain,nonatomic) UIImageView    *switchCameraVidIcon;
 @property (retain,nonatomic) UIImageView    *cameraSwitchBG;
+@property (retain,nonatomic) UIImageView    *focusTapIndicator;
+@property (retain,nonatomic) NSTimer        *focusIndicatorFlickeringTimer;
+@property (nonatomic)        BOOL           focusIndicatorHighlighed;
+@property (retain,nonatomic) NSDate         *focusIndicatroFlickeringStart;
 @property (retain,nonatomic) JSBlocksButton *shotButton;
 @property (retain,nonatomic) JSBlocksButton *shotButtonVideo;
 @property (retain,nonatomic) JSBlocksButton *cameraSwitchButton;
 @property (retain,nonatomic) JSBlocksButton *cancelButton;
+@property (retain,nonatomic) JSBlocksButton *switchFrontCamera;
 @property (nonatomic, retain) UIActivityIndicatorView *galleryLastPictureLoadingSpinner;
 @property (nonatomic, retain) UIView *galleryButtonBox;
 @property (nonatomic, retain) UIImageView *lastPictureImageView;
@@ -85,6 +106,11 @@
 @end
 
 @implementation CameraOverlayView
+@synthesize focusIndicatroFlickeringStart=_focusIndicatroFlickeringStart;
+@synthesize focusTapIndicator=_focusTapIndicator;
+@synthesize focusIndicatorFlickeringTimer=_focusIndicatorFlickeringTimer;
+@synthesize focusIndicatorHighlighed=_focusIndicatorHighlighed;
+@synthesize switchFrontCamera =_switchFrontCamera;
 @synthesize cameraPicker;
 @synthesize delegate = _delegate;
 @synthesize galleryLastPictureLoadingSpinner = _galleryLastPictureLoadingSpinner;
@@ -93,7 +119,7 @@
 @synthesize photoAndVideo;
 @synthesize shotButton,shotButtonVideo,cameraSwitchButton,cancelButton;
 @synthesize videoCounterContainer;
-@synthesize picCameraMode,recordingVideo,recordingButtonOn;
+@synthesize picCameraMode,picFrontCameraMode,recordingVideo,recordingButtonOn;
 @synthesize switchCameraPicIcon,switchCameraVidIcon,cameraSwitchBG;
 @synthesize videoRecordingTimer,videoRecordingTimeStart;
 
@@ -102,6 +128,7 @@
     if ((self = [super initWithFrame:frame]))
     {
         self.picCameraMode =YES;
+        self.picFrontCameraMode =NO;
         self.recordingVideo=NO;
         CGSize screenSize = [UIScreen mainScreen].bounds.size;
 
@@ -136,14 +163,7 @@
         
         // Shot Button
             self.shotButton = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {
-                CATransition *animation = [CATransition animation];
-                animation.delegate = self;
-                animation.duration = 0.5;
-                animation.timingFunction = UIViewAnimationCurveEaseInOut;
-                animation.type = @"cameraIris";
-                
-                [self.window.layer addAnimation:animation forKey:nil];
-                [cameraPicker takePicture];
+                [self shotPhotoCamera];
             }];
             self.shotButton.imageView.contentMode=UIViewContentModeCenter;
             [self.shotButton setBackgroundImage:[UIImage imageNamed:@"cameraShotButton.png"] forState:UIControlStateNormal];        
@@ -156,20 +176,7 @@
         
         // Shot Button Video
             self.shotButtonVideo = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {                
-                if(self.recordingVideo){                    
-                    [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOff.png"] forState:UIControlStateNormal];
-                    self.videoCounterContainer.hidden=YES;
-                    [cameraPicker stopVideoCapture];
-                    [self.videoRecordingTimer invalidate];                    
-                }else{
-                    [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOn.png"] forState:UIControlStateNormal];
-                    self.videoCounterContainer.hidden=NO;
-                    [cameraPicker startVideoCapture];
-                    self.videoRecordingTimeStart=[NSDate date];
-                    self.videoRecordingTimer=[NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(updateVideoCounter:) userInfo:nil repeats:YES];                    
-                    [self.videoRecordingTimer fire];
-                }
-                self.recordingVideo=!self.recordingVideo;
+                [self shotVideoCamera];
             }];
             self.shotButtonVideo.imageView.contentMode=UIViewContentModeCenter;
             [self.shotButtonVideo setBackgroundImage:[UIImage imageNamed:@"cameraShotButton.png"] forState:UIControlStateNormal];        
@@ -261,6 +268,33 @@
             self.cancelButton.frame=cancelBtnframe;
         //- Cancel/Exit Button
         
+        // Switch Front/Back Button
+        if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerCameraDeviceRear]){
+            self.switchFrontCamera = [JSBlocksButton buttonWithType:UIButtonTypeCustom tapCallback:^(JSBlocksButton *button) {
+                if (!self.picFrontCameraMode){
+                    self.cameraPicker.cameraDevice = UIImagePickerControllerCameraDeviceFront;
+                }else{
+                    self.cameraPicker.cameraDevice = UIImagePickerControllerCameraDeviceRear;
+                }
+                self.picFrontCameraMode=!self.picFrontCameraMode;
+            }];
+            [self.switchFrontCamera setBackgroundImage:[UIImage imageNamed:@"PLCameraToggle.png"] forState:UIControlStateNormal];
+            [self.switchFrontCamera setBackgroundImage:[UIImage imageNamed:@"PLCameraTogglePressed.png"] forState:UIControlStateSelected];
+            CGRect switchCameraBtnframe=CGRectMake(kSwitchBackCameraButtonPositionX0, kSwitchBackCameraButtonPositionY0, kSwitchBackCameraButtonWidth, kSwitchBackCameraButtonHeight);
+            self.switchFrontCamera.frame=switchCameraBtnframe;
+        }
+        //- Switch Front/Back Button
+        
+        // Focus Tap Gesture Recognizer and Tap Indicator View
+            UITapGestureRecognizer *gestureRecognizer = [[UITapGestureRecognizer alloc]initWithTarget:self action:nil];
+            [self addGestureRecognizer:gestureRecognizer];
+            gestureRecognizer.delegate=self;
+            [gestureRecognizer release];
+            self.focusTapIndicator=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, kCameraFocustIndicatorSize, kCameraFocustIndicatorSize)];
+            self.focusTapIndicator.image=[UIImage imageNamed:@"PLFocusCrosshairsSmall0.png"];
+            self.focusTapIndicator.hidden=YES;
+        //- Focus Tap Gesture Recognizer and Tap Indicator View
+        
         [bottomControlsView addSubview:_galleryButtonBox];
         [bottomControlsView addSubview:bottomBG];
         [bottomControlsView addSubview:self.shotButton];
@@ -271,14 +305,77 @@
         [bottomControlsView addSubview:self.switchCameraPicIcon];
         [bottomControlsView addSubview:self.switchCameraVidIcon];
         
-
+        [self addSubview:self.focusTapIndicator];
         [self addSubview:bottomControlsView];
-        [self addSubview:cancelButton];
+        [self addSubview:self.cancelButton];
+        [self addSubview:self.switchFrontCamera];
         [self addSubview:self.videoCounterContainer];
         [bottomControlsView release];     
     }
     
     return self;
+}
+-(IBAction) handleTapGesture:(UIGestureRecognizer *) sender withTouch:(UITouch *)touch {
+    CGPoint touchPoint=[touch locationInView:self];
+    if(touchPoint.y>kCameraUpperControlsAreaHeight && touchPoint.y<(self.frame.size.height-kGalleryBottomControlsHeight)){
+        CGRect focusTapFrame=self.focusTapIndicator.frame;
+        focusTapFrame.origin.x=touchPoint.x-(focusTapFrame.size.width/2);
+        focusTapFrame.origin.y=touchPoint.y-(focusTapFrame.size.height/2);
+        self.focusTapIndicator.frame=focusTapFrame;
+        self.focusTapIndicator.hidden=NO;
+        if([self.focusIndicatorFlickeringTimer isValid])
+            [self.focusIndicatorFlickeringTimer invalidate];
+        self.focusIndicatroFlickeringStart=[NSDate date];
+        self.focusIndicatorFlickeringTimer=[NSTimer scheduledTimerWithTimeInterval:kCameraFocustIndicatorFlickeringInterval target:self selector:@selector(focusFlickeringTimeCounter:) userInfo:nil repeats:YES];                    
+        [self.focusIndicatorFlickeringTimer fire];
+    }
+}
+- (void) focusFlickeringTimeCounter:(NSTimer*)theTimer{
+    double elapsedTime = -[self.focusIndicatroFlickeringStart timeIntervalSinceNow];
+    if(!self.focusIndicatorHighlighed){
+        self.focusTapIndicator.image=[UIImage imageNamed:@"PLFocusCrosshairsSmall0.png"];
+    }else{
+        self.focusTapIndicator.image=[UIImage imageNamed:@"PLFocusCrosshairsSmall1.png"];
+    }
+    self.focusIndicatorHighlighed=!self.focusIndicatorHighlighed;
+    if(elapsedTime>=kCameraFocustIndicatorFlickeringTime){
+        self.focusTapIndicator.hidden=YES;
+        [theTimer invalidate];
+    }
+    
+}
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch{
+    [self handleTapGesture:gestureRecognizer withTouch:touch];
+    return NO;
+}
+- (void)shotPhotoCamera{
+    CATransition *animation = [CATransition animation];
+    animation.delegate = self;
+    animation.duration = 0.5;
+    animation.timingFunction = UIViewAnimationCurveEaseInOut;
+    animation.type = @"cameraIris";
+    [self.window.layer addAnimation:animation forKey:nil];
+    [cameraPicker takePicture];
+}
+- (void)shotVideoCamera{
+    if(self.recordingVideo){                    
+        self.cancelButton.hidden=NO;
+        self.switchFrontCamera.hidden=NO;
+        [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOff.png"] forState:UIControlStateNormal];
+        self.videoCounterContainer.hidden=YES;
+        [cameraPicker stopVideoCapture];
+        [self.videoRecordingTimer invalidate];                    
+    }else{
+        self.cancelButton.hidden=YES;
+        self.switchFrontCamera.hidden=YES;
+        [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOn.png"] forState:UIControlStateNormal];
+        self.videoCounterContainer.hidden=NO;
+        [cameraPicker startVideoCapture];
+        self.videoRecordingTimeStart=[NSDate date];
+        self.videoRecordingTimer=[NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(updateVideoCounter:) userInfo:nil repeats:YES];                    
+        [self.videoRecordingTimer fire];
+    }
+    self.recordingVideo=!self.recordingVideo;
 }
 - (void)setPhotoAndVideo:(BOOL)_photoAndVideo{
     photoAndVideo=_photoAndVideo;
@@ -295,6 +392,7 @@
     switchBtnFrame.origin.y=bottomControlsView.frame.size.height-kCameraPicSwitchPositionOffsetY;
     self.cameraSwitchButton.frame=switchBtnFrame;
     self.picCameraMode=YES;
+    self.picFrontCameraMode=NO;
     self.shotButton.hidden=!self.picCameraMode;
     self.shotButtonVideo.hidden=self.picCameraMode;
 }
@@ -379,6 +477,35 @@
     
     return transform;
 }
+- (CGAffineTransform)switchCameraFrontButtonTransformForDeviceOrientation:(UIDeviceOrientation)orientation
+{
+    CGSize screenSize = [UIScreen mainScreen].bounds.size;
+    
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    
+    
+    switch (orientation)
+    {
+        case UIDeviceOrientationLandscapeLeft:
+            transform = CGAffineTransformMakeRotation(M_PI_2); // 90 degrees
+            transform = CGAffineTransformTranslate(transform, kSwitchBackCameraButtonPositionX90 , 0 -(screenSize.width - kSwitchBackCameraButtonPositionY90 - kSwitchBackCameraButtonWidth));
+            break;
+        case UIDeviceOrientationLandscapeRight:
+            transform = CGAffineTransformMakeRotation(-M_PI_2); // -90 degrees
+            transform = CGAffineTransformTranslate(transform,  0 - screenSize.height +kSwitchBackCameraButtonWidth + kSwitchBackCameraButtonPositionX270 , 0 +  kSwitchBackCameraButtonPositionY270);
+            break;
+        case UIDeviceOrientationPortrait:
+            // Identity transform
+            break;
+        case UIDeviceOrientationPortraitUpsideDown:
+            transform = CGAffineTransformMakeRotation(M_PI); // 180 degrees
+            transform = CGAffineTransformTranslate(transform, 0 - screenSize.width + kSwitchBackCameraButtonPositionX180 + kSwitchBackCameraButtonWidth, 0);
+            break;
+        default: break;
+    }
+    
+    return transform;
+}
 - (CGAffineTransform)videoCounterTransformForDeviceOrientation:(UIDeviceOrientation)orientation
 {
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
@@ -430,14 +557,16 @@
             self.switchCameraVidIcon.transform = [self galleryImageBoxTransformForDeviceOrientation:newDeviceOrientation];
             self.shotButton.imageView.transform = [self galleryImageBoxTransformForDeviceOrientation:newDeviceOrientation];
             self.cancelButton.alpha=0.0f;            
-            //self.videoCounterContainer.alpha=0.0f;
+            self.switchFrontCamera.alpha=0.0f;
+            self.videoCounterContainer.alpha=0.0f;
             self.videoCounterContainer.transform = [self videoCounterTransformForDeviceOrientation:newDeviceOrientation];
         } completion:^(BOOL finished) {
             self.cancelButton.transform = [self cancelButtonTransformForDeviceOrientation:newDeviceOrientation];                            
-            
+            self.switchFrontCamera.transform = [self switchCameraFrontButtonTransformForDeviceOrientation:newDeviceOrientation];                           
             [UIView animateWithDuration:animationDuration delay:0.0 options:UIViewAnimationOptionBeginFromCurrentState animations:^{
                 self.cancelButton.alpha=1.0f;
                 self.videoCounterContainer.alpha=1.0f;
+                self.switchFrontCamera.alpha=1.0f;
             } completion:^(BOOL finished) {
                 
             }];
@@ -501,6 +630,11 @@
 
 - (void)dealloc
 {
+    [_focusIndicatorFlickeringTimer invalidate];
+    [_focusIndicatorFlickeringTimer release];
+    [_focusIndicatroFlickeringStart release];
+    [_switchFrontCamera release];
+    [_focusTapIndicator release];
     [videoRecordingTimer release];
     [videoCounterContainer release];
     [shotButton release];
