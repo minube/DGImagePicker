@@ -28,7 +28,6 @@
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView;
 - (void)cameraOverlayViewGalleryButtonPressed:(CameraOverlayView *)cameraOverlayView AnimationDuration:(CGFloat)duration;
 - (void)galleryCameraButtonPressedWithAnimationDuration:(CGFloat)duration;
-- (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo;
 @end
 @implementation DGImagePicker
 @synthesize selectedAssetsURLS=_selectedAssetsURLS;
@@ -146,73 +145,69 @@
         self.failureBlock(nil);
     }
 }
-/*
-
-if (userImage != nil) {
-    ALAssetsLibrary * library = [[ALAssetsLibrary alloc] init];
-    [library assetForURL:[NSURL fileURLWithPath:userImage] 
-             resultBlock:^(ALAsset * asset){
-                 [imageOfDevice setImage:[UIImage imageWithCGImage:[asset thumbnail]]];
-             }
-            failureBlock:^(NSError * error){
-                NSLog(@"cannot get image - %@", [error localizedDescription]);
-            }];
-}
-
-ALAssetsLibrary *library = [AssetLibraryUtil instance].library;
-if( [picker sourceType] == UIImagePickerControllerSourceTypeCamera )
-{
-    UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
-    [library writeImageToSavedPhotosAlbum:image.CGImage orientation:(ALAssetOrientation)image.imageOrientation completionBlock:^(NSURL *assetURL, NSError *error )
-     {
-         NSLog(@"IMAGE SAVED TO PHOTO ALBUM");
-         [library assetForURL:assetURL resultBlock:^(ALAsset *asset )
-          {
-              NSLog(@"we have our ALAsset!");
-          } 
-                 failureBlock:^(NSError *error )
-          {
-              NSLog(@"Error loading asset");
-          }];
-     }];
-}
- */
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
-    DebugLog(@"picker 1");
-    ALAssetsLibrary * library = [AGImagePickerController defaultAssetsLibrary];
-    UIImage * image;
-    // Request to save Image
-    __block NSArray *infoArray=nil;
     if(info){        
-        if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){
-            DebugLog(@"picker 2");
+        __block ALAssetsLibrary * library = [AGImagePickerController defaultAssetsLibrary];
+        if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){            
+            UIImage * image;
+            // Request to save Image
+            __block NSArray *infoArray=nil;
             image=[info objectForKey:UIImagePickerControllerOriginalImage];
-            DebugLog(@"picker 3");
             [library writeImageToSavedPhotosAlbum:[image CGImage] orientation:(ALAssetOrientation)[image imageOrientation] completionBlock:^(NSURL * assetURL, NSError * error){
-                DebugLog(@"picker 4");
-                [library assetForURL:assetURL resultBlock:^(ALAsset * asset){
-                     infoArray=[NSArray arrayWithObject:asset];
-                     if(self.successBlock){
-                         self.successBlock(infoArray);
+                if(error){
+                    NSLog(@"Error saving image : %@",error.userInfo);
+                    if(self.failureBlock){
+                        self.failureBlock(error);
+                    }
+                }else {
+                    NSLog(@"Image saved successfully");                                                
+                    [library assetForURL:assetURL resultBlock:^(ALAsset * asset){
+                         infoArray=[NSArray arrayWithObject:asset];
+                         if(self.successBlock){
+                             self.successBlock(infoArray);
+                         }
                      }
-                 }
-                failureBlock:^(NSError * error){
-                    NSLog(@"cannot get image - %@", [error localizedDescription]);
-                }];
+                    failureBlock:^(NSError * error){
+                        NSLog(@"cannot get image - %@", [error localizedDescription]);
+                    }];
+                }
             }];
         }else if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.movie"]){
             NSString *videoFilePath = [[info objectForKey:UIImagePickerControllerMediaURL] path];
+            __block NSArray *infoArray=nil;
             if ( UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoFilePath))
             {
-                UISaveVideoAtPathToSavedPhotosAlbum(videoFilePath, self, @selector(video:didFinishSavingWithError:contextInfo:), videoFilePath);
+                [library writeVideoAtPathToSavedPhotosAlbum:[NSURL URLWithString:videoFilePath] completionBlock:^(NSURL *assetURL, NSError *error) {
+                    if(error){
+                        NSLog(@"Error saving video : %@",error.userInfo);
+                        if(self.failureBlock){
+                            self.failureBlock(error);
+                        }
+                    }else {
+                        NSLog(@"Video saved successfully");                                                
+                        [library assetForURL:assetURL resultBlock:^(ALAsset * asset){                        
+                            if(asset){
+                                infoArray=[NSArray arrayWithObject:asset];
+                                if(self.successBlock){
+                                    self.successBlock(infoArray);
+                                }
+                            }
+                        }
+                        failureBlock:^(NSError * error){
+                            NSLog(@"cannot get video - %@", [error localizedDescription]);
+                            if(self.failureBlock){
+                                self.failureBlock(error);
+                            }
+                        }];
+                    }
+                }];
             } 
         }
     }
 }
-- (void)video:(NSString *)videoPath didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo{
-    NSLog(@"Finished saving video with error: %@", error);
-}
 - (void)agImagePickerController:(AGImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info{
+    self.selectedAssetsURLS=picker.selectedAssetsURLS;
+    DebugLog(@"%@",self.selectedAssetsURLS);
     if(self.successBlock){
         self.successBlock(info);
     }
