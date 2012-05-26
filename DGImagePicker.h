@@ -1,12 +1,13 @@
 //
-//  MNImagePicker.h
-//  minube
-//
+//  DGImagePicker.h
+//  
 //  Created by Daniel García on 20/3/12.
-//  Copyright (c) 2012 minube.com. All rights reserved.
+//  Copyright (c) 2012. All rights reserved.
 //
 
+
 #import <Foundation/Foundation.h>
+#import "DGImagePickerConstants.h"
 #import "CameraOverlayView.h"
 #import "AGImagePickerController.h"
 typedef enum{

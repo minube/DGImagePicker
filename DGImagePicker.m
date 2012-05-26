@@ -146,21 +146,24 @@
     }
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
+    LogMethod();
     if(info){        
         __block ALAssetsLibrary * library = [AGImagePickerController defaultAssetsLibrary];
         if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){            
+            DebugLog(@"Image Taken");
             UIImage * image;
             // Request to save Image
             __block NSArray *infoArray=nil;
             image=[info objectForKey:UIImagePickerControllerOriginalImage];
+            DebugLog(@"Saving Image to Library");
             [library writeImageToSavedPhotosAlbum:[image CGImage] orientation:(ALAssetOrientation)[image imageOrientation] completionBlock:^(NSURL * assetURL, NSError * error){
                 if(error){
-                    NSLog(@"Error saving image : %@",error.userInfo);
+                    DebugLog(@"Error saving image : %@",error.userInfo);
                     if(self.failureBlock){
                         self.failureBlock(error);
                     }
                 }else {
-                    NSLog(@"Image saved successfully");                                                
+                    DebugLog(@"Image saved successfully");                                                
                     [library assetForURL:assetURL resultBlock:^(ALAsset * asset){
                          infoArray=[NSArray arrayWithObject:asset];
                          if(self.successBlock){
@@ -168,7 +171,7 @@
                          }
                      }
                     failureBlock:^(NSError * error){
-                        NSLog(@"cannot get image - %@", [error localizedDescription]);
+                        DebugLog(@"cannot get image - %@", [error localizedDescription]);
                     }];
                 }
             }];
