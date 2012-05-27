@@ -4,3 +4,6 @@
 [submodule "JSBlockBasedUIKit"]
 	path = JSBlockBasedUIKit
 	url = https://fillito@github.com/JaviSoto/Block-based-UIKit-classes.git
+[submodule "JSProgressHUD"]
+	path = JSProgressHUD
+	url = https://fillito@github.com/fillito/JSProgressHUD.git
