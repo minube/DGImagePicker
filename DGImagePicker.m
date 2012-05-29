@@ -91,6 +91,12 @@
             self.cameraPicker.cameraOverlayView = self.cameraOverlay;        
             self.cameraPicker.showsCameraControls=NO;
             self.cameraPicker.mediaTypes = [NSArray arrayWithObjects:(NSString *)kUTTypeMovie, (NSString *)kUTTypeImage, nil];
+//-            UIImagePickerControllerQualityTypeIFrame1280x720
+//-            UIImagePickerControllerQualityTypeIFrame960x540
+//-            UIImagePickerControllerQualityType640x480
+//-            UIImagePickerControllerQualityTypeLow
+//-            UIImagePickerControllerQualityTypeMedium
+//-            UIImagePickerControllerQualityTypeHigh;
             self.cameraPicker.videoQuality=UIImagePickerControllerQualityTypeHigh;
             self.cameraOverlay.cameraPicker=self.cameraPicker;
             // Gallery to Camera Switch
