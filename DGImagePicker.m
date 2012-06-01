@@ -15,6 +15,7 @@
 @interface DGImagePicker(){
 }
 @property (assign,nonatomic) id presentedPicker;
+@property (nonatomic) BOOL showPreview;
 @property (retain,nonatomic) ALAssetsLibrary * library;
 @property (nonatomic)        NSInteger maxSelectableItems;
 @property (retain,nonatomic) UIViewController *imagePickerVC;
@@ -32,6 +33,7 @@
 - (void)galleryCameraButtonPressedWithAnimationDuration:(CGFloat)duration;
 @end
 @implementation DGImagePicker
+@synthesize showPreview=_showPreview;
 @synthesize library=_library;
 @synthesize selectedAssetsURLS=_selectedAssetsURLS;
 @synthesize maxSelectableItems;
@@ -52,7 +54,11 @@
 {
     return [self initWithDelegate:delegate maxItems:maxItems assetsType:DGAssetsTypeAll successBlock:_successBlock failureBlock:_failureBlock];
 }
-- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock 
+{
+    return [self initWithDelegate:delegate maxItems:maxItems assetsType:assetsType showPreview:NO successBlock:_successBlock failureBlock:_failureBlock];
+}
+- (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems assetsType:(DGAssetsType)assetsType showPreview:(BOOL)showPreview successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock
 {    
     self=[super initWithNibName:nil bundle:nil];
     self.imagePickerVC=[[[UIViewController alloc]init]autorelease];
@@ -60,6 +66,7 @@
         self.failureBlock=_failureBlock;
         self.successBlock=_successBlock;
         self.maxSelectableItems=[maxItems intValue];
+        self.showPreview=showPreview;
         BOOL photoAndVideoCamera=NO;
         
         self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self failureBlock:nil successBlock:nil maximumNumberOfPhotos:[maxItems intValue] shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
@@ -164,31 +171,35 @@
         if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){            
             DebugLog(@"Image Taken");
             __block NSArray *infoArray=nil;
-            UIImage *image=[info objectForKey:UIImagePickerControllerOriginalImage];
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                DebugLog(@"Saving Image to Library");
-                [self.library writeImageToSavedPhotosAlbum:[image CGImage] orientation:(ALAssetOrientation)[image imageOrientation] completionBlock:^(NSURL * assetURL, NSError * error){
-                    if(error){
-                        DebugLog(@"Error saving image : %@",error.userInfo);
-                        [progressHUD dismissWithError:@"Error" afterDelay:0.9];
-                        if(self.failureBlock){
-                            self.failureBlock(error);
-                        }
-                    }else {
-                        DebugLog(@"Image saved successfully");                                                
-                        [self.library assetForURL:assetURL resultBlock:^(ALAsset * asset){
-                            self.selectedAssetsURLS=[self.selectedAssetsURLS arrayByAddingObject:assetURL];
-                            infoArray=[NSArray arrayWithObject:asset];
-                            [progressHUD dismiss];
-                            if(self.successBlock){
-                                self.successBlock(infoArray);
+            UIImage *image=[info objectForKey:UIImagePickerControllerOriginalImage];            
+            if(self.showPreview){            
+                [self.navigationController pushViewController:[[[ImagePreviewViewController alloc]initWithImage:image]autorelease] animated:YES];
+            }else {                
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    DebugLog(@"Saving Image to Library");
+                    [self.library writeImageToSavedPhotosAlbum:[image CGImage] orientation:(ALAssetOrientation)[image imageOrientation] completionBlock:^(NSURL * assetURL, NSError * error){
+                        if(error){
+                            DebugLog(@"Error saving image : %@",error.userInfo);
+                            [progressHUD dismissWithError:@"Error" afterDelay:0.9];
+                            if(self.failureBlock){
+                                self.failureBlock(error);
                             }
-                        }failureBlock:^(NSError * error){
-                            DebugLog(@"cannot get image - %@", [error localizedDescription]);
-                        }];
-                    }
-                }];
-            });
+                        }else {
+                            DebugLog(@"Image saved successfully");                                                
+                            [self.library assetForURL:assetURL resultBlock:^(ALAsset * asset){
+                                self.selectedAssetsURLS=[self.selectedAssetsURLS arrayByAddingObject:assetURL];
+                                infoArray=[NSArray arrayWithObject:asset];
+                                [progressHUD dismiss];
+                                if(self.successBlock){
+                                    self.successBlock(infoArray);
+                                }
+                            }failureBlock:^(NSError * error){
+                                DebugLog(@"cannot get image - %@", [error localizedDescription]);
+                            }];
+                        }
+                    }];
+                });
+            }
         }else if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.movie"]){
             NSString *videoFilePath = [[info objectForKey:UIImagePickerControllerMediaURL] path];
             __block NSArray *infoArray=nil;
@@ -225,8 +236,16 @@
 - (void)agImagePickerController:(AGImagePickerController *)picker didFinishPickingMediaWithInfo:(NSArray *)info{
     self.selectedAssetsURLS=picker.selectedAssetsURLS;
     DebugLog(@"%@",self.selectedAssetsURLS);
-    if(self.successBlock){
-        self.successBlock(info);
+    if(self.showPreview){            
+        DebugLog(@"Show preview");
+        ALAsset *assetItem=[info objectAtIndex:0];
+        UIImage *image=[UIImage imageWithCGImage:[[assetItem defaultRepresentation] fullScreenImage]];
+        [self.navigationController pushViewController:[[[ImagePreviewViewController alloc]initWithImage:image]autorelease] animated:YES];
+    }else {
+        DebugLog(@"Don't Show preview");
+        if(self.successBlock){
+            self.successBlock(info);
+        }
     }
 }
 - (void)agImagePickerController:(AGImagePickerController *)picker didFail:(NSError *)error{

@@ -7,3 +7,6 @@
 [submodule "JSProgressHUD"]
 	path = JSProgressHUD
 	url = https://fillito@github.com/fillito/JSProgressHUD.git
+[submodule "BJImageCropper"]
+	path = BJImageCropper
+	url = https://fillito@github.com/fillito/BJImageCropper.git

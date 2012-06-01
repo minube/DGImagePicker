@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-
+#import "BJImageCropper.h"
 @interface ImagePreviewViewController : UIViewController
 - (id)initWithImage:(UIImage *)image;
 @end
