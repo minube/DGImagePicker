@@ -49,7 +49,7 @@
     */
     CGRect imagePreviewCropperFrame=viewFrame;
     LogFrame(imagePreviewCropperFrame);
-    self.imageCropper = [[BJImageCropper alloc] initWithFrame:imagePreviewCropperFrame];
+    self.imageCropper = [[[BJImageCropper alloc] initWithFrame:imagePreviewCropperFrame]autorelease];
     self.imageCropper.image=self.previewImage;
 //    self.imageCropper = [[BJImageCropper alloc] initWithImage:self.previewImage andMaxSize:CGSizeMake(self.view.frame.size.width, self.view.frame.size.height)];
     [self.view addSubview:self.imageCropper];
