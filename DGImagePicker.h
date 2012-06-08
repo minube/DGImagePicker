@@ -20,7 +20,7 @@ typedef void (^DGIPDidFail)(NSError *error);
 @interface DGImagePicker : UIViewController <UINavigationControllerDelegate,UIImagePickerControllerDelegate,AGImagePickerControllerDelegate,CameraOverlayViewDelegate>{
     
 }
-@property (retain,nonatomic) NSArray *selectedAssetsURLS;
+@property (retain,nonatomic) NSMutableArray *selectedAssetsURLS;
 - (DGImagePicker *)initWithDelegate:(id)delegate successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
 - (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
 - (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
