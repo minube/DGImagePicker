@@ -72,6 +72,7 @@
         
         self.galleryPicker= [[[AGImagePickerController alloc]initWithDelegate:self selectedAssetsURLS:self.selectedAssetsURLS failureBlock:nil successBlock:nil maximumNumberOfPhotos:[maxItems intValue] shouldChangeStatusBarStyle:NO toolbarItemsForSelection:nil andShouldDisplaySelectionInformation:NO]autorelease];             
         self.library = [AGImagePickerController defaultAssetsLibrary];
+        self.galleryPicker.shouldShowSavedPhotosOnTop=YES;
         switch (assetsType) {
             case DGAssetsTypeOnlyPhotos:
                 photoAndVideoCamera=NO;
@@ -165,13 +166,12 @@
     }
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info{
-    LogMethod();
     if(info){        
         if([[info objectForKey:UIImagePickerControllerMediaType]isEqualToString:@"public.image"]){            
-            __block NSArray *infoArray=nil;
+            NSArray *infoArray=nil;
             UIImage *image=[info objectForKey:UIImagePickerControllerOriginalImage];                
-            NSString *timestamp = [NSString stringWithFormat:@"%ldd", (long)[NSDate date]];
-            NSDictionary *picker=[NSDictionary dictionaryWithObjects:[NSArray arrayWithObjects:image,timestamp, nil] forKeys:[NSArray arrayWithObjects:@"public.jpeg",@"timestamp", nil]]; 
+            __block NSDate *shootingDate=[[NSDate date]retain];
+            NSDictionary *picker=[NSDictionary dictionaryWithObjects:[NSArray arrayWithObjects:image,shootingDate, nil] forKeys:[NSArray arrayWithObjects:@"public.jpeg",@"shootingDate", nil]]; 
             infoArray=[NSArray arrayWithObject:picker];
             createBlockSafeSelf();
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -179,13 +179,14 @@
                     if(error){
                         DebugLog(@"Error saving image : %@",error.userInfo);                            
                     }else {
-                        DebugLog(@"Image saved successfully");                                                
-                        [blockSafeSelf.library assetForURL:assetURL resultBlock:^(ALAsset * asset){                            
-                            [blockSafeSelf.selectedAssetsURLS addObject:assetURL];                 
-                            LogObject(blockSafeSelf.selectedAssetsURLS);
-                        }failureBlock:^(NSError * error){
-                            DebugLog(@"cannot get image - %@", [error localizedDescription]);
-                        }];
+                        DebugLog(@"Image saved successfully");     
+                        [blockSafeSelf.selectedAssetsURLS addObject:assetURL];
+                        LogObject(blockSafeSelf.selectedAssetsURLS);
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            NSDictionary *ALAssetInfo=[NSDictionary dictionaryWithObjects:[NSArray arrayWithObjects:assetURL,shootingDate, nil] forKeys:[NSArray arrayWithObjects:@"ALAssetURL",@"shootingDate", nil]];
+                            [[NSNotificationCenter defaultCenter]postNotificationName:kDGImagePickerSavedIntoLibraryNotification object:nil userInfo:ALAssetInfo];
+                            [shootingDate release];
+                        });
                     }
                 }];
             });
@@ -251,6 +252,7 @@
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView{
 }
 -(void)viewWillAppear:(BOOL)animated{ 
+    LogMethod();
     [super viewWillAppear:animated];    
     [self.cameraOverlay updateLastPhotoTaken];
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackTranslucent];
@@ -264,7 +266,10 @@
     [super viewDidDisappear:animated];
     [self.cameraOverlay resetOriginalState];
 }
-
+- (void)viewDidUnload{
+    LogMethod();
+    [super viewDidUnload];
+}
 -(void)dealloc{
     LogMethod();
     [_library release];

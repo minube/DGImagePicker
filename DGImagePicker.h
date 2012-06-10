@@ -10,6 +10,7 @@
 #import "DGImagePickerConstants.h"
 #import "CameraOverlayView.h"
 #import "AGImagePickerController.h"
+#define kDGImagePickerSavedIntoLibraryNotification @"DGImagePickerSavedIntoLibraryNotification"
 typedef enum{
     DGAssetsTypeAll = 0,
     DGAssetsTypeOnlyPhotos,
