@@ -12,10 +12,10 @@
 
 #import <QuartzCore/QuartzCore.h>
 #import "CameraOverlayView.h"
-
+#import "DGImagePicker.h"
 #import "JSBlocksButton.h"
 #import "JSBlocksActionSheet.h"
-
+#import "JSProgressHUD.h"
 #import "ImageLibraryAssetManager.h"
 
 #define kGalleryBoxSwitchSideAnimationDuration 0.20
@@ -363,6 +363,8 @@
         self.switchFrontCamera.hidden=NO;
         [self.shotButtonVideo setImage:[UIImage imageNamed:@"recordingOff.png"] forState:UIControlStateNormal];
         self.videoCounterContainer.hidden=YES;
+        ((DGImagePicker *)self.delegate).progressHud=[JSProgressHUD progressViewInView:self];
+        [((DGImagePicker *)self.delegate).progressHud showWithStatus:@"Guardando Vídeo" maskType:JSProgressHUDMaskTypeBlack];
         [cameraPicker stopVideoCapture];
         [self.videoRecordingTimer invalidate];                    
     }else{

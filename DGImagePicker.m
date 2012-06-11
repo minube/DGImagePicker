@@ -10,7 +10,6 @@
 #import "CustomImagePickerController.h"
 #import <MobileCoreServices/UTCoreTypes.h>
 #import "ImagePreviewViewController.h"
-#import "JSProgressHUD.h"
 
 @interface DGImagePicker(){
 }
@@ -26,6 +25,7 @@
 @property (retain,nonatomic) AGImagePickerController *galleryPicker;
 @property (copy,nonatomic) DGIPDidSuccess successBlock;
 @property (copy,nonatomic) DGIPDidFail failureBlock;
+
 - (void)cameraOverlayViewGalleryButtonPressed:(CameraOverlayView *)cameraOverlayView;
 - (void)cameraOverlayView:(CameraOverlayView *)cameraOverlayView lastPictureFromGalleryLoaded:(UIImage *)lastPictureFromGallery;
 - (void)cameraOverlayViewDidDisappearFromScreen:(CameraOverlayView *)cameraOverlayView;
@@ -33,6 +33,7 @@
 - (void)galleryCameraButtonPressedWithAnimationDuration:(CGFloat)duration;
 @end
 @implementation DGImagePicker
+@synthesize progressHud=_progressHud;
 @synthesize showPreview=_showPreview;
 @synthesize library=_library;
 @synthesize selectedAssetsURLS=_selectedAssetsURLS;
@@ -199,9 +200,11 @@
             __block NSArray *infoArray=nil;
             if ( UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(videoFilePath))
             {
+                createBlockSafeSelf();                
                 [self.library writeVideoAtPathToSavedPhotosAlbum:[NSURL URLWithString:videoFilePath] completionBlock:^(NSURL *assetURL, NSError *error) {
                     if(error){
                         NSLog(@"Error saving video : %@",error.userInfo);
+                        [blockSafeSelf.progressHud dismissWithError:@"Error Guardando Vídeo" afterDelay:0.5];
                         if(self.failureBlock){
                             self.failureBlock(error);
                         }
@@ -209,14 +212,17 @@
                         NSLog(@"Video saved successfully");                                                
                         [self.library assetForURL:assetURL resultBlock:^(ALAsset * asset){                        
                             if(asset){
+                                [blockSafeSelf.selectedAssetsURLS addObject:assetURL];
+                                [blockSafeSelf.progressHud dismissWithSuccess:@"Guardado !!" afterDelay:0.5];  
                                 infoArray=[NSArray arrayWithObject:asset];
                                 if(self.successBlock){
                                     self.successBlock(infoArray);
-                                }
+                                }                                
                             }
                         }
                         failureBlock:^(NSError * error){
                             NSLog(@"cannot get video - %@", [error localizedDescription]);
+                            [blockSafeSelf.progressHud dismissWithError:@"Error Guardando Vídeo" afterDelay:0.5];
                             if(self.failureBlock){
                                 self.failureBlock(error);
                             }

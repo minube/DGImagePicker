@@ -10,6 +10,7 @@
 #import "DGImagePickerConstants.h"
 #import "CameraOverlayView.h"
 #import "AGImagePickerController.h"
+#import "JSProgressHUD.h"
 #define kDGImagePickerSavedIntoLibraryNotification @"DGImagePickerSavedIntoLibraryNotification"
 typedef enum{
     DGAssetsTypeAll = 0,
@@ -22,6 +23,7 @@ typedef void (^DGIPDidFail)(NSError *error);
     
 }
 @property (retain,nonatomic) NSMutableArray *selectedAssetsURLS;
+@property (retain,nonatomic) JSProgressHUD *progressHud;
 - (DGImagePicker *)initWithDelegate:(id)delegate successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
 - (DGImagePicker *)initWithDelegate:(id)delegate assetsType:(DGAssetsType)assetsType successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
 - (DGImagePicker *)initWithDelegate:(id)delegate maxItems:(NSNumber *)maxItems successBlock:(DGIPDidSuccess)_successBlock failureBlock:(DGIPDidFail)_failureBlock;
